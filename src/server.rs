@@ -42,6 +42,7 @@ pub async fn start(l_addr: String, d_addr: String, auth: String) -> crate::Resul
                 loop {
                     if stop2.load(std::sync::atomic::Ordering::Relaxed) {
                         let _ = sw.close().await;
+                        warn!("server stop2 break");
                         break;
                     }
                     let res = timeout(std::time::Duration::from_secs(60 * 60), async {
@@ -66,6 +67,7 @@ pub async fn start(l_addr: String, d_addr: String, auth: String) -> crate::Resul
             loop {
                 // let mut s = s.unwrap();
                 if stop.load(std::sync::atomic::Ordering::Relaxed) {
+                    warn!("server stop break");
                     break;
                 }
                 let data = sr.read().await;
@@ -108,6 +110,18 @@ async fn server_test() -> Result<(), Error> {
     });
     sleep(std::time::Duration::from_secs(1));
     let res = start("127.0.0.1:8989".to_string(), "127.0.0.1:8990".to_string(), "test".to_string()).await;
+    println!("server start {}", res.err().unwrap());
+    Ok(())
+}
+
+#[tokio::test]
+async fn server_wg() -> Result<(), Error> {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "debug")
+    }
+    env_logger::init();
+
+    let res = start("127.0.0.1:22809".to_string(), "192.168.102.129:22809".to_string(), "test".to_string()).await;
     println!("server start {}", res.err().unwrap());
     Ok(())
 }

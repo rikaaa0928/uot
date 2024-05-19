@@ -177,3 +177,15 @@ async fn client_test2() -> Result<(), Error> {
     // println!("client tcp read {:?}", res.unwrap());
     Ok(())
 }
+
+#[tokio::test]
+async fn client_test() -> Result<(), Error> {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "debug")
+    }
+    env_logger::init();
+
+    let _ = start("127.0.0.1:22809".to_string(), "127.0.0.1:22809".to_string(), "test".to_string()).await;
+
+    Ok(())
+}
