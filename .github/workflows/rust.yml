@@ -12,6 +12,7 @@ env:
 jobs:
   build-and-upload:
     name: Build and upload
+    permissions: write-all
     runs-on: ${{ matrix.os }}
 
     strategy:
