@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::thread::sleep;
 use anyhow::Error;
-use log::{debug, error, warn};
+use log::{debug, error, info, warn};
 use tokio::net::UdpSocket;
 use tokio::spawn;
 use tokio::time::timeout;
@@ -55,6 +55,7 @@ pub async fn start(l_addr: String, d_addr: String, auth: String) -> crate::Resul
                         let (size, _) = res.unwrap();
                         let w_buf = &buf[..size];
                         let _ = sw.write(w_buf).await;
+                        debug!("server udp write {}", size);
                     }).await;
                     if res.is_err() {
                         warn!("server udp recv timeout, close");
@@ -82,10 +83,12 @@ pub async fn start(l_addr: String, d_addr: String, auth: String) -> crate::Resul
                 let res = w.send(&data[..]).await;
                 if res.is_err() {
                     error!("server udp send {}", res.err().unwrap());
+                    stop.store(true, std::sync::atomic::Ordering::Relaxed);
                     // sr.close().await;
                     break;
                 }
             }
+            info!("server tcp over");
             Ok::<(), Error>(())
         });
     }
@@ -121,7 +124,7 @@ async fn server_wg() -> Result<(), Error> {
     }
     env_logger::init();
 
-    let res = start("127.0.0.1:22809".to_string(), "192.168.102.129:22809".to_string(), "test".to_string()).await;
+    let res = start("192.168.31.26:22809".to_string(), "127.0.0.1:22809".to_string(), "test".to_string()).await;
     println!("server start {}", res.err().unwrap());
     Ok(())
 }

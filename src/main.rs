@@ -3,6 +3,9 @@ mod rs_tcp;
 mod server;
 
 use std::env;
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
+use anyhow::Error;
 use clap::{arg, command, Arg, ArgAction};
 
 type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
@@ -33,5 +36,18 @@ async fn main() -> Result<()> {
     } else {
         let _ = client::start(src_opt.unwrap().to_string(), dst_opt.unwrap().to_string(), auth.unwrap().to_string()).await?;
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn stop_test() -> std::result::Result<(), Error> {
+    let stop = Arc::new(AtomicBool::new(false));
+    let stop2 = stop.clone();
+    println!("{}",stop.load(std::sync::atomic::Ordering::Relaxed));
+    println!("{}",stop2.load(std::sync::atomic::Ordering::Relaxed));
+    stop2.store(true, std::sync::atomic::Ordering::Relaxed);
+    println!("{}",stop.load(std::sync::atomic::Ordering::Relaxed));
+    println!("{}",stop2.load(std::sync::atomic::Ordering::Relaxed));
+
     Ok(())
 }
