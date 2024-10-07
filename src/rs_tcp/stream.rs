@@ -65,6 +65,29 @@ impl RSWriteHalf {
 }
 
 impl RStream {
+    pub async fn handshake(&mut self) -> Result<(), Error> {
+        let x = self.read().await;
+        if x.is_err() {
+            self.close().await?;
+            // drop(self);
+            return Err(x.err().unwrap());
+        }
+        let a = x.unwrap();
+        let auth_str = std::str::from_utf8(&a).unwrap();
+        debug!("auth_str: {}", auth_str);
+        let auth_info = crypt::parse_auth(auth_str);
+        if auth_info.is_err() {
+            self.close().await?;
+            // drop(res);
+            return Err(Error::new(ErrorKind::Other, "Invalid key, parse error"));
+        }
+        if auth_info.unwrap().pw != self.key {
+            self.close().await?;
+            // drop(res);
+            return Err(Error::new(ErrorKind::Other, "Invalid key"));
+        }
+        return Ok(());
+    }
     pub(crate) fn new(stream: TcpStream, key: String) -> RStream {
         RStream { stream, key }
     }

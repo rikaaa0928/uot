@@ -22,20 +22,25 @@ pub async fn start(l_addr: String, d_addr: String, auth: String) -> crate::Resul
         }
         let mut s = s.unwrap();
         let d_addr = d_addr.clone();
-
-        let socket = UdpSocket::bind("0.0.0.0:0").await?;
-        let res = socket.connect(&d_addr).await;
-        if res.is_err() {
-            error!("server udp connect {}", res.err().unwrap());
-            let _ = s.close().await;
-            break;
-        }
-        let r = Arc::new(socket);
-        let w = r.clone();
-
-        let (mut sr, mut sw) = RStream::split(s);
-
         spawn(async move {
+            let res = s.handshake().await;
+            if res.is_err() {
+                error!("handshake error {}", res.err().unwrap());
+                return Ok::<(), Error>(());
+            }
+
+            let socket = UdpSocket::bind("0.0.0.0:0").await?;
+            let res = socket.connect(&d_addr).await;
+            if res.is_err() {
+                error!("server udp connect {}", res.err().unwrap());
+                let _ = s.close().await;
+                return Ok::<(), Error>(());
+            }
+            let r = Arc::new(socket);
+            let w = r.clone();
+
+            let (mut sr, mut sw) = RStream::split(s);
+
             let stop = Arc::new(AtomicBool::new(false));
             let stop2 = stop.clone();
             spawn(async move {
