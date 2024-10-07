@@ -73,7 +73,11 @@ impl RStream {
             return Err(x.err().unwrap());
         }
         let a = x.unwrap();
-        let auth_str = std::str::from_utf8(&a).unwrap();
+        let auth_res = std::str::from_utf8(&a);
+        if auth_res.is_err() {
+            return Err(Error::new(ErrorKind::Other, "handshake from utf8 error: ".to_owned() + auth_res.err().unwrap().to_string().as_str()));
+        }
+        let auth_str = auth_res.unwrap();
         debug!("auth_str: {}", auth_str);
         let auth_info = crypt::parse_auth(auth_str);
         if auth_info.is_err() {
